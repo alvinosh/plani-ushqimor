@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Languages, LoaderCircle, Menu, TriangleAlert, X } from 'lucide-react'
 import { makeI18n } from './lib/i18n.js'
 import { localDate, priceFoods } from './lib/pricing.js'
 import { PROFILES, profileById } from './data/profiles.js'
@@ -7,7 +8,7 @@ import PlanView from './components/PlanView.jsx'
 import PricesView from './components/PricesView.jsx'
 import About from './components/About.jsx'
 
-const DEFAULTS = { lang: 'sq', people: 1, city: '', merchants: [], strategy: 'cheapest' }
+const DEFAULTS = { lang: 'sq', people: 1, city: '', merchants: [], strategy: 'cheapest', cooking: 'daily' }
 
 function useSettings() {
   const [settings, setSettings] = useState(() => {
@@ -55,24 +56,124 @@ function useRoute() {
   return route
 }
 
-function DataBanner({ data, i18n }) {
+// Thin strip above the header: what this site is, and how fresh the data is.
+function Strip({ data, i18n }) {
   const { t, date } = i18n
-  const pub = data.publication
+  const pub = data?.publication
   return (
-    <p className="data-banner">
-      {t('pricesFrom')}{' '}
-      <a href={data.source} target="_blank" rel="noreferrer">
-        Pasqyra e Çmimeve
-      </a>
-      {pub && (
-        <>
-          {' · '}
-          {t('updated')} {date(new Date(pub.publishedAt), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-          {' · '}
-          {t('reporting', { n: pub.reportingMerchants, m: pub.expectedMerchants })}
-        </>
-      )}
-    </p>
+    <div className="strip">
+      <div className="wrap strip-row">
+        <span>{t('independent')}</span>
+        {pub && (
+          <span className="strip-live">
+            <span className="dot-live" aria-hidden="true" />
+            {t('pricesFrom')}
+            <a href={data.source} target="_blank" rel="noreferrer">
+              Pasqyra e Çmimeve
+            </a>
+            <span>
+              · {t('updated')} {date(new Date(pub.publishedAt), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+            </span>
+            <span className="strip-extra">· {t('reporting', { n: pub.reportingMerchants, m: pub.expectedMerchants })}</span>
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function Brand() {
+  return (
+    <a className="brand" href="#/">
+      <span className="brand-mark" aria-hidden="true" />
+      <span className="brand-name">Plani Ushqimor</span>
+    </a>
+  )
+}
+
+function Header({ nav, settings, update, t }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <header className="site-header">
+      <div className="wrap">
+        <div className="header-bar">
+          <Brand />
+          <nav className="nav">
+            {nav.map(([href, label, active]) => (
+              <a key={href} className="nav-link" href={href} aria-current={active ? 'page' : undefined}>
+                {label}
+              </a>
+            ))}
+            <button
+              type="button"
+              className="lang"
+              onClick={() => update({ lang: settings.lang === 'sq' ? 'en' : 'sq' })}
+              aria-label={settings.lang === 'sq' ? 'Switch to English' : 'Kalo në shqip'}
+            >
+              <Languages aria-hidden="true" />
+              {settings.lang === 'sq' ? 'EN' : 'SQ'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary menu-btn"
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              onClick={() => setOpen((o) => !o)}
+            >
+              {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+              <span className="menu-label">{open ? t('navClose') : t('navMenu')}</span>
+            </button>
+          </nav>
+        </div>
+        {open && (
+          <nav id="mobile-menu" className="mobile-menu">
+            {nav.map(([href, label, active]) => (
+              <a key={href} href={href} aria-current={active ? 'page' : undefined} onClick={() => setOpen(false)}>
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
+      </div>
+    </header>
+  )
+}
+
+function Footer({ nav, t }) {
+  return (
+    <footer className="site-footer">
+      <div className="wrap">
+        <Brand />
+        <p className="footer-tagline">{t('tagline')}</p>
+        <nav className="footer-nav">
+          {nav.map(([href, label]) => (
+            <a key={href} href={href}>
+              {label}
+            </a>
+          ))}
+        </nav>
+        <div className="footer-fine">
+          <p>
+            {t('source')}:{' '}
+            <a href="https://pasqyraecmimeve.al" target="_blank" rel="noreferrer">
+              Pasqyra e Çmimeve
+            </a>{' '}
+            · Ministria e Ekonomisë dhe Inovacionit. {t('notAffiliated')}
+          </p>
+          <p>{t('disclaimer')}</p>
+        </div>
+        <p className="footer-credit">
+          {t('createdBy')} <strong>Alvi Hysa</strong> ·{' '}
+          <a href="https://github.com/alvinosh" target="_blank" rel="noreferrer">
+            GitHub
+          </a>{' '}
+          ·{' '}
+          <a href="https://www.linkedin.com/in/alvi-hysa" target="_blank" rel="noreferrer">
+            LinkedIn
+          </a>
+        </p>
+      </div>
+    </footer>
   )
 }
 
@@ -99,67 +200,42 @@ export default function App() {
   ]
 
   let body
-  if (error) body = <p className="notice">{t('loadError')}</p>
-  else if (!data) body = <p className="notice">{t('loading')}</p>
+  if (error)
+    body = (
+      <p className="notice">
+        <TriangleAlert aria-hidden="true" /> {t('loadError')}
+      </p>
+    )
+  else if (!data)
+    body = (
+      <p className="notice">
+        <LoaderCircle className="spin" aria-hidden="true" /> {t('loading')}
+      </p>
+    )
   else if (profile) body = <PlanView key={profile.id} profile={profile} data={data} prices={prices} settings={settings} update={update} i18n={i18n} today={today} />
   else if (page === 'cmimet') body = <PricesView data={data} history={history} prices={prices} settings={settings} update={update} i18n={i18n} today={today} />
   else if (page === 'rreth') body = <About i18n={i18n} />
-  else body = <Home profiles={PROFILES} prices={prices} i18n={i18n} today={today} />
+  else body = <Home profiles={PROFILES} data={data} prices={prices} filters={filters} settings={settings} i18n={i18n} today={today} />
 
   return (
     <>
-      <header className="site-header">
-        <div className="wrap header-row">
-          <a className="brand" href="#/">
-            <span className="brand-mark" aria-hidden="true" />
-            <span>
-              <strong>Plani Ushqimor</strong>
-              <small>{t('tagline')}</small>
-            </span>
-          </a>
-          <nav className="nav">
-            {nav.map(([href, label, active]) => (
-              <a key={href} href={href} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}>
-                {label}
-              </a>
-            ))}
-            <button
-              type="button"
-              className="lang-toggle"
-              onClick={() => update({ lang: settings.lang === 'sq' ? 'en' : 'sq' })}
-              aria-label={settings.lang === 'sq' ? 'Switch to English' : 'Kalo në shqip'}
-            >
-              {settings.lang === 'sq' ? 'EN' : 'SQ'}
-            </button>
-          </nav>
-        </div>
-      </header>
-      <main className="wrap">
-        {data && <DataBanner data={data} i18n={i18n} />}
+      {/* Focus instead of following the link: the hash holds the route. */}
+      <a
+        className="skip"
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault()
+          document.getElementById('main')?.focus()
+        }}
+      >
+        {t('skip')}
+      </a>
+      <Strip data={data} i18n={i18n} />
+      <Header nav={nav} settings={settings} update={update} t={t} />
+      <main id="main" className="wrap" tabIndex={-1} key={page ?? 'home'}>
         {body}
       </main>
-      <footer className="site-footer">
-        <div className="wrap">
-          <p>
-            {t('source')}:{' '}
-            <a href="https://pasqyraecmimeve.al" target="_blank" rel="noreferrer">
-              Pasqyra e Çmimeve
-            </a>{' '}
-            · Ministria e Ekonomisë dhe Inovacionit. {t('notAffiliated')}
-          </p>
-          <p>{t('disclaimer')}</p>
-          <p className="credit">
-            {t('createdBy')} <strong>Alvi Hysa</strong> ·{' '}
-            <a href="https://github.com/alvinosh" target="_blank" rel="noreferrer">
-              GitHub
-            </a>{' '}
-            ·{' '}
-            <a href="https://www.linkedin.com/in/alvi-hysa" target="_blank" rel="noreferrer">
-              LinkedIn
-            </a>
-          </p>
-        </div>
-      </footer>
+      <Footer nav={nav} t={t} />
     </>
   )
 }

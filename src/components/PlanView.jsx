@@ -1,9 +1,33 @@
 import { useMemo, useState } from 'react'
+import {
+  ArrowLeft,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  CircleCheck,
+  CookingPot,
+  Copy,
+  Flame,
+  Info,
+  Minus,
+  Plus,
+  Printer,
+  Refrigerator,
+  ShoppingBasket,
+  Shuffle,
+  Snowflake,
+  Tag,
+  TriangleAlert,
+  Wallet,
+} from 'lucide-react'
 import { FOODS } from '../data/foods.js'
-import { buildPlan, ingredientTotals, shoppingList } from '../lib/planner.js'
+import { capitalise } from '../lib/i18n.js'
+import { buildPlan, COOKING, ingredientTotals, shoppingList } from '../lib/planner.js'
 import { localDate } from '../lib/pricing.js'
+import CookPlan from './CookPlan.jsx'
 import Filters from './Filters.jsx'
 import Meter from './Meter.jsx'
+import { PROFILE_ICONS } from './profileIcons.js'
 
 // Groups the month's days into Monday-to-Sunday weeks.
 function weeksOf(days) {
@@ -14,8 +38,6 @@ function weeksOf(days) {
   }
   return weeks
 }
-
-const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
 function packLabel(size, unit, i18n) {
   if (unit === '10 vezë') return size === 1 ? i18n.unit(unit) : `${i18n.num(size * 10)} ${i18n.lang === 'en' ? 'eggs' : 'vezë'}`
@@ -29,33 +51,102 @@ function quantityLabel(row, i18n) {
   return `${i18n.num(row.qty, 1)} ${i18n.unit(row.unit)}`
 }
 
-function DayCard({ day, isToday, i18n }) {
-  const { t, num, money, date, pick } = i18n
+const longDate = (i18n, d) => i18n.date(d, { weekday: 'long', day: 'numeric', month: 'short' })
+
+function Meal({ meal, i18n }) {
+  const { t, num, pick } = i18n
+  const { slot, recipe, leftover, ahead, servings } = meal
+  const portions = 1 + ahead.length
   return (
-    <article className={`day${isToday ? ' is-today' : ''}`}>
-      <header className="day-head">
-        <h4>{capitalise(date(day.date, { weekday: 'long', day: 'numeric', month: 'short' }))}</h4>
-        {isToday && <span className="badge accent">{t('today')}</span>}
-      </header>
-      <ul className="meals">
-        {day.meals.map(({ slot, recipe }, i) => (
-          <li key={i}>
-            <details>
-              <summary>
-                <span className="slot">{t(`slot_${slot}`)}</span>
-                <span className="meal-name">{pick(recipe.name)}</span>
-              </summary>
+    <li>
+      <details>
+        <summary>
+          <span className="slot">{t(`slot_${slot}`)}</span>
+          <span className="meal-name">{pick(recipe.name)}</span>
+          {(leftover || portions > 1) && (
+            <span className="meal-tags">
+              {portions > 1 && (
+                <span className="tag tag-cook">
+                  <CookingPot aria-hidden="true" />
+                  {t('tagCook', { n: portions })}
+                </span>
+              )}
+              {leftover && (
+                <span className="tag tag-cold">
+                  {leftover.frozen ? <Snowflake aria-hidden="true" /> : <Refrigerator aria-hidden="true" />}
+                  {t(leftover.frozen ? 'tagFreezer' : 'tagFridge')}
+                </span>
+              )}
+            </span>
+          )}
+          <ChevronDown className="chev" aria-hidden="true" />
+        </summary>
+        <div className="meal-body">
+          {leftover ? (
+            <p className="steps">
+              {t('cookedOn', { d: longDate(i18n, leftover.date) })} {leftover.frozen && t('thawNote')} {t('reheat')}
+            </p>
+          ) : (
+            <>
+              {portions > 1 && <p className="portions-note">{t('portionsFor', { n: portions })}</p>}
               <ul className="ingredients">
                 {Object.entries(recipe.ing).map(([code, g]) => (
                   <li key={code}>
-                    <span aria-hidden="true">{FOODS[code].icon}</span> {pick(FOODS[code].name)}
-                    <span className="grams">{num(Math.round((g * day.scale) / 5) * 5)} g</span>
+                    {pick(FOODS[code].name)}
+                    <span className="grams">{num(Math.round((g * servings) / 5) * 5)} g</span>
                   </li>
                 ))}
               </ul>
               {recipe.steps && <p className="steps">{pick(recipe.steps)}</p>}
-            </details>
-          </li>
+              {ahead.length > 0 ? (
+                <ul className="storage">
+                  {ahead.map((a) => (
+                    <li key={+a.date}>
+                      {a.frozen ? <Snowflake aria-hidden="true" /> : <Refrigerator aria-hidden="true" />}
+                      {t(a.frozen ? 'freezeFor' : 'keepFor', { when: `${t(`slot_${a.slot}`)}, ${longDate(i18n, a.date)}` })}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                recipe.keeps > 0 && (
+                  <ul className="storage">
+                    <li>
+                      <Refrigerator aria-hidden="true" />
+                      {recipe.keeps === 1 ? t('keeps1') : t('keepsN', { n: recipe.keeps })}
+                      {recipe.freezes && `, ${t('freezes')}`}
+                    </li>
+                  </ul>
+                )
+              )}
+            </>
+          )}
+        </div>
+      </details>
+    </li>
+  )
+}
+
+function DayCard({ day, isToday, i18n }) {
+  const { t, num, money, date, pick } = i18n
+  return (
+    <article className={`day${isToday ? ' is-today' : ''}`} id={isToday ? 'today' : undefined}>
+      <header className="day-head">
+        <span className="day-num">{day.date.getDate()}</span>
+        <span>
+          <span className="day-name">{capitalise(date(day.date, { weekday: 'long' }))}</span>
+          <span className="day-month">{date(day.date, { month: 'long' })}</span>
+        </span>
+        {isToday && <span className="badge badge-today">{t('today')}</span>}
+      </header>
+      {day.thaw.map((meal) => (
+        <p key={meal.recipe.id} className="thaw">
+          <Snowflake aria-hidden="true" />
+          <span>{t('thawReminder', { r: pick(meal.recipe.name) })}</span>
+        </p>
+      ))}
+      <ul className="meals">
+        {day.meals.map((meal, i) => (
+          <Meal key={i} meal={meal} i18n={i18n} />
         ))}
       </ul>
       <footer className="day-foot">
@@ -69,17 +160,30 @@ function DayCard({ day, isToday, i18n }) {
 
 function Menu({ weeks, people, i18n, today }) {
   const { t, date } = i18n
+  const hasToday = weeks.some((week) => week.some((day) => localDate(day.date) === today))
   return (
     <div className="menu">
-      <p className="muted">{t('perPersonNote', { n: people })}</p>
+      <div className="menu-bar">
+        <p>{t('perPersonNote', { n: people })}</p>
+        {hasToday && (
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+          >
+            <CalendarDays aria-hidden="true" />
+            {t('jumpToday')}
+          </button>
+        )}
+      </div>
       {weeks.map((week, w) => (
         <section key={w} className="week">
-          <h3>
-            {t('weekN', { n: w + 1 })}{' '}
-            <span className="muted">
+          <header className="week-head">
+            <h3>{t('weekN', { n: w + 1 })}</h3>
+            <span>
               {date(week[0].date)} – {date(week[week.length - 1].date)}
             </span>
-          </h3>
+          </header>
           <div className="days">
             {week.map((day) => (
               <DayCard key={+day.date} day={day} isToday={localDate(day.date) === today} i18n={i18n} />
@@ -126,13 +230,14 @@ function ShoppingList({ weeks, people, prices, i18n }) {
             </button>
           ))}
         </div>
-        <button type="button" className="button" onClick={copy}>
+        <button type="button" className="btn btn-outline" onClick={copy}>
+          {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
           {copied ? t('copied') : t('copyList')}
         </button>
       </div>
 
       <div className="table-wrap">
-        <table className="table">
+        <table className="table stack">
           <thead>
             <tr>
               <th>{t('food')}</th>
@@ -146,20 +251,19 @@ function ShoppingList({ weeks, people, prices, i18n }) {
               const p = r.price
               return (
                 <tr key={r.code}>
-                  <td>
-                    <span aria-hidden="true">{r.food.icon}</span> {pick(r.food.name)}
-                  </td>
-                  <td className="nowrap">{quantityLabel(r, i18n)}</td>
-                  <td>
+                  <td className="col-main food-name">{pick(r.food.name)}</td>
+                  <td className="col-sub nowrap">{quantityLabel(r, i18n)}</td>
+                  <td className="col-wide">
                     {p.source === 'official' ? (
                       <>
                         <span className="product-name">{p.item.name}</span>
                         <span className="product-meta">
                           {p.offer.merchant} · {num(p.unitPrice, 2)} {t('perUnit', { u: unit(p.item.unit) })}
-                          {p.promo && <span className="badge good">{t('promoUntil', { d: date(p.offer.promo.to) })}</span>}
+                          {p.promo && <span className="badge badge-good">{t('promoUntil', { d: date(p.offer.promo.to) })}</span>}
                         </span>
                         {p.upcoming && (
                           <span className="product-hint">
+                            <Tag aria-hidden="true" />
                             {t('upcoming', {
                               d: date(p.upcoming.offer.promo.from),
                               p: `${num(p.upcoming.offer.promo.price, 2)} ${t('perUnit', { u: unit(p.upcoming.item.unit) })}`,
@@ -170,27 +274,27 @@ function ShoppingList({ weeks, people, prices, i18n }) {
                       </>
                     ) : (
                       <span className="product-meta" title={t('estimateTip')}>
-                        <span className="badge muted-badge">{t('estimate')}</span> ≈ {num(p.unitPrice)} lekë/kg
+                        <span className="badge badge-muted">{t('estimate')}</span> ≈ {num(p.unitPrice)} lekë/kg
                       </span>
                     )}
                   </td>
-                  <td className="num">{money(r.cost)}</td>
+                  <td className="col-side num nowrap">{money(r.cost)}</td>
                 </tr>
               )
             })}
           </tbody>
           <tfoot>
             <tr>
-              <th colSpan={3}>
+              <th className="col-main" colSpan={3}>
                 {t('total')}
                 <span className="muted"> · {t('estimatedShare', { x: money(list.estimated) })}</span>
               </th>
-              <th className="num">{money(list.total)}</th>
+              <th className="col-side num nowrap">{money(list.total)}</th>
             </tr>
           </tfoot>
         </table>
       </div>
-      <p className="muted small">{t('shopNote')}</p>
+      <p className="table-note">{t('shopNote')}</p>
     </div>
   )
 }
@@ -199,13 +303,21 @@ function Guide({ profile, i18n }) {
   const { t, pick } = i18n
   return (
     <div className="guide">
-      <h3>{t('guideTitle')}</h3>
-      <ul>
-        {pick(profile.guide).map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
-      <p className="callout">{t('disclaimer')}</p>
+      <div>
+        <h3>{t('guideTitle')}</h3>
+        <ul className="checklist">
+          {pick(profile.guide).map((line) => (
+            <li key={line}>
+              <Check aria-hidden="true" />
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <p className="callout">
+        <TriangleAlert aria-hidden="true" />
+        <span>{t('disclaimer')}</span>
+      </p>
     </div>
   )
 }
@@ -215,49 +327,108 @@ export default function PlanView({ profile, data, prices, settings, update, i18n
   const [monthOffset, setMonthOffset] = useState(0)
   const [variant, setVariant] = useState(0)
   const [tab, setTab] = useState('menu')
+  const Icon = PROFILE_ICONS[profile.id]
+  const cooking = COOKING[settings.cooking] ? settings.cooking : 'daily'
 
   const [ty, tm] = today.split('-').map(Number)
   const start = new Date(ty, tm - 1 + monthOffset, 1)
   const year = start.getFullYear()
   const month = start.getMonth()
 
-  const plan = useMemo(() => buildPlan({ profile, prices, year, month, variant }), [profile, prices, year, month, variant])
+  const plan = useMemo(
+    () => buildPlan({ profile, prices, year, month, variant, cooking }),
+    [profile, prices, year, month, variant, cooking],
+  )
   const weeks = useMemo(() => weeksOf(plan.days), [plan])
   const monthList = useMemo(
     () => shoppingList(ingredientTotals(plan.days, settings.people), prices),
     [plan, settings.people, prices],
   )
+  const mains = plan.days.flatMap((d) => d.meals.filter((m) => m.slot === 'lunch' || m.slot === 'dinner'))
+  const leftovers = mains.filter((m) => m.leftover).length
+
+  const tabs = [
+    ['menu', t('tabMenu'), CalendarDays],
+    ['cook', t('tabCook'), CookingPot],
+    ['shop', t('tabShop'), ShoppingBasket],
+    ['guide', t('tabGuide'), Info],
+  ]
 
   return (
     <section className="plan">
       <a className="back" href="#/">
+        <ArrowLeft aria-hidden="true" />
         {t('back')}
       </a>
-      <header className="plan-head">
-        <span className="profile-icon large" aria-hidden="true">
-          {profile.icon}
-        </span>
-        <div>
-          <h1>{pick(profile.name)}</h1>
-          <p className="muted">{pick(profile.who)}</p>
+
+      <header className="plan-hero">
+        <div className="plan-hero-main gridded">
+          <span className="icon-tile lg">
+            <Icon aria-hidden="true" />
+          </span>
+          <p className="eyebrow">
+            {t('monthlyPlan')} · {date(new Date(year, month, 1), { month: 'long', year: 'numeric' })}
+          </p>
+          <h1 className="display">{pick(profile.name)}</h1>
+          <p className="lede">{pick(profile.who)}</p>
+          <ul className="facts">
+            <li>{t('kcalDay', { n: num(profile.kcal) })}</li>
+            <li>{t('proteinMin', { n: profile.min.p })}</li>
+            <li>{t('mealsDay', { n: profile.slots.length })}</li>
+          </ul>
+        </div>
+        <div className="plan-hero-cost">
+          <div>
+            <span className="label">
+              <ShoppingBasket aria-hidden="true" />
+              {t('monthlyCost')}
+            </span>
+            <span className="amount">
+              {num(Math.round(monthList.total))}
+              <small>{t('lekë')}</small>
+            </span>
+            <p className="sub">{settings.people === 1 ? t('forOne') : t('forPeople', { n: settings.people })}</p>
+          </div>
+          <div className="cost-split">
+            <div>
+              <strong>{money(monthList.official)}</strong>
+              <span>{t('atOfficial')}</span>
+            </div>
+            <div>
+              <strong>{money(monthList.estimated)}</strong>
+              <span>{t('atEstimated')}</span>
+            </div>
+          </div>
         </div>
       </header>
 
-      <Filters data={data} settings={settings} update={update} i18n={i18n}>
-        <label className="field">
-          <span>{t('people')}</span>
-          <span className="stepper">
-            <button type="button" aria-label="−" onClick={() => update({ people: Math.max(1, settings.people - 1) })}>
-              −
+      <Filters data={data} settings={settings} update={update} i18n={i18n} title={t('adjust')}>
+        <div className="field">
+          <span className="field-label" id="people-label">
+            {t('people')}
+          </span>
+          <span className="stepper" role="group" aria-labelledby="people-label">
+            <button
+              type="button"
+              aria-label="−"
+              disabled={settings.people <= 1}
+              onClick={() => update({ people: Math.max(1, settings.people - 1) })}
+            >
+              <Minus aria-hidden="true" />
             </button>
-            <output>{settings.people}</output>
-            <button type="button" aria-label="+" onClick={() => update({ people: Math.min(12, settings.people + 1) })}>
-              +
+            <output aria-live="polite">{settings.people}</output>
+            <button
+              type="button"
+              aria-label="+"
+              disabled={settings.people >= 12}
+              onClick={() => update({ people: Math.min(12, settings.people + 1) })}
+            >
+              <Plus aria-hidden="true" />
             </button>
           </span>
-        </label>
+        </div>
         <label className="field">
-          <span>{t('month')}</span>
+          <span className="field-label">{t('month')}</span>
           <select value={monthOffset} onChange={(e) => setMonthOffset(Number(e.target.value))}>
             {[0, 1].map((o) => (
               <option key={o} value={o}>
@@ -266,38 +437,64 @@ export default function PlanView({ profile, data, prices, settings, update, i18n
             ))}
           </select>
         </label>
-        <div className="field actions">
-          <button type="button" className="button" onClick={() => setVariant((v) => v + 1)}>
-            ↻ {t('shuffle')}
+        <fieldset className="field">
+          <legend className="field-label">{t('cooking')}</legend>
+          <div className="segmented">
+            {Object.keys(COOKING).map((c) => (
+              <button key={c} type="button" aria-pressed={cooking === c} onClick={() => update({ cooking: c })}>
+                {t(`cook_${c}`)}
+              </button>
+            ))}
+          </div>
+          <p className="field-hint">{t(`cookHint_${cooking}`)}</p>
+        </fieldset>
+        <div className="field field-actions">
+          <button type="button" className="btn btn-secondary" onClick={() => setVariant((v) => v + 1)}>
+            <Shuffle aria-hidden="true" />
+            {t('shuffle')}
           </button>
-          <button type="button" className="button" onClick={() => window.print()}>
+          <button type="button" className="btn btn-outline" onClick={() => window.print()}>
+            <Printer aria-hidden="true" />
             {t('print')}
           </button>
         </div>
       </Filters>
 
-      <div className="kpis">
-        <div className="tile hero">
-          <span className="tile-label">{t('monthlyCost')}</span>
-          <span className="tile-value">{money(monthList.total)}</span>
-          <span className="tile-sub">
-            {settings.people === 1 ? t('forOne') : t('forPeople', { n: settings.people })} ·{' '}
-            {t('estimatedShare', { x: money(monthList.estimated) })}
+      <div className="stats">
+        <div className="tile">
+          <span className="tile-label">
+            <Flame aria-hidden="true" />
+            {t('energy')}
           </span>
-        </div>
-        <div className="tile">
-          <span className="tile-label">{t('perDay')}</span>
-          <span className="tile-value">{money(plan.avg.cost)}</span>
-          <span className="tile-sub">{t('perDayNote')}</span>
-        </div>
-        <div className="tile">
-          <span className="tile-label">{t('energy')}</span>
           <span className="tile-value">
-            {num(plan.avg.kcal)} <small>kcal</small>
+            {num(plan.avg.kcal)}
+            <small>kcal</small>
           </span>
           <span className="tile-sub">
             {t('target')} {num(profile.kcal)} kcal · {t('avgDay')}
           </span>
+        </div>
+        <div className="tile">
+          <span className="tile-label">
+            <Wallet aria-hidden="true" />
+            {t('perDay')}
+          </span>
+          <span className="tile-value">
+            {num(Math.round(plan.avg.cost))}
+            <small>{t('lekë')}</small>
+          </span>
+          <span className="tile-sub">{t('perDayNote')}</span>
+        </div>
+        <div className="tile">
+          <span className="tile-label">
+            {cooking === 'fresh' ? <CircleCheck aria-hidden="true" /> : <Refrigerator aria-hidden="true" />}
+            {t('statCook')}
+          </span>
+          <span className="tile-value">
+            {num(leftovers)}
+            <small>{t('meals')}</small>
+          </span>
+          <span className="tile-sub">{t('statCookSub', { c: mains.length - leftovers, m: mains.length })}</span>
         </div>
         <div className="tile meters">
           <Meter label={t('protein')} value={plan.avg.p} target={profile.min.p} unit="g" i18n={i18n} />
@@ -307,18 +504,16 @@ export default function PlanView({ profile, data, prices, settings, update, i18n
       </div>
 
       <div className="tabs" role="tablist">
-        {[
-          ['menu', t('tabMenu')],
-          ['shop', t('tabShop')],
-          ['guide', t('tabGuide')],
-        ].map(([id, label]) => (
+        {tabs.map(([id, label, TabIcon]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
+            <TabIcon aria-hidden="true" />
             {label}
           </button>
         ))}
       </div>
 
       {tab === 'menu' && <Menu weeks={weeks} people={settings.people} i18n={i18n} today={today} />}
+      {tab === 'cook' && <CookPlan weeks={weeks} cooking={cooking} i18n={i18n} />}
       {tab === 'shop' && <ShoppingList weeks={weeks} people={settings.people} prices={prices} i18n={i18n} />}
       {tab === 'guide' && <Guide profile={profile} i18n={i18n} />}
     </section>

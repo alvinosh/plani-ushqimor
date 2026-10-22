@@ -24,7 +24,6 @@ const SNACK = { slot: 'snack', from: ['snack'] }
 export const PROFILES = [
   {
     id: 'balanced',
-    icon: '⚖️',
     name: { sq: 'E balancuar', en: 'Balanced' },
     who: { sq: 'Të rritur me aktivitet mesatar', en: 'Adults with moderate activity' },
     kcal: 2200,
@@ -49,7 +48,6 @@ export const PROFILES = [
   },
   {
     id: 'children',
-    icon: '🧒',
     name: { sq: 'Për fëmijë (4–10 vjeç)', en: 'Children (4–10 years)' },
     who: { sq: 'Porcione për një fëmijë në moshë shkollore', en: 'Portions for one school-age child' },
     kcal: 1500,
@@ -77,7 +75,6 @@ export const PROFILES = [
   },
   {
     id: 'highprotein',
-    icon: '💪',
     name: { sq: 'Me shumë proteina', en: 'High protein' },
     who: { sq: 'Për stërvitje forcë / ndërtim muskujsh (~75 kg)', en: 'For strength training / muscle gain (~75 kg)' },
     kcal: 2600,
@@ -102,7 +99,6 @@ export const PROFILES = [
   },
   {
     id: 'budget',
-    icon: '💰',
     name: { sq: 'Ekonomike', en: 'Budget' },
     who: { sq: 'Kosto sa më e ulët, ushqyerje e plotë', en: 'Lowest cost that still covers the basics' },
     kcal: 2200,
@@ -127,7 +123,6 @@ export const PROFILES = [
   },
   {
     id: 'weightloss',
-    icon: '🥗',
     name: { sq: 'Për humbje peshe', en: 'Weight loss' },
     who: { sq: 'Deficit kalorik i moderuar, shumë fibra e proteina', en: 'Moderate calorie deficit, high fibre and protein' },
     kcal: 1600,
@@ -152,7 +147,6 @@ export const PROFILES = [
   },
   {
     id: 'vegetarian',
-    icon: '🥕',
     name: { sq: 'Vegjetariane', en: 'Vegetarian' },
     who: { sq: 'Pa mish e peshk; me vezë dhe bulmet', en: 'No meat or fish; includes eggs and dairy' },
     kcal: 2100,
@@ -178,7 +172,6 @@ export const PROFILES = [
   },
   {
     id: 'seniors',
-    icon: '👵',
     name: { sq: 'Për të moshuar (65+)', en: 'Older adults (65+)' },
     who: { sq: 'Ushqime të buta, më shumë kalcium e proteinë', en: 'Softer foods, more calcium and protein' },
     kcal: 1900,

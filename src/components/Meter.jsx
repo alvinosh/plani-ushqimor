@@ -1,3 +1,5 @@
+import { TriangleAlert } from 'lucide-react'
+
 // A value against a daily target. The fill switches to the warning colour, with
 // an icon and a label, when the plan falls more than 5% short.
 export default function Meter({ label, value, target, unit, i18n }) {
@@ -26,7 +28,7 @@ export default function Meter({ label, value, target, unit, i18n }) {
         {t('target')} {num(target)} {unit}
         {short && (
           <span className="status-warning">
-            <span aria-hidden="true">▲</span> {t('belowTarget')}
+            <TriangleAlert aria-hidden="true" /> {t('belowTarget')}
           </span>
         )}
       </div>

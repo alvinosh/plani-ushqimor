@@ -23,6 +23,17 @@ const CONTENT = {
         Kur një produkt del në ofertë ose ndryshon çmimi, plani mund të ndryshojë: p.sh. më shumë pulë kur pula është në
         ofertë.
       </p>
+      <h2>Gatimi përpara</h2>
+      <p>
+        Shumë gjellë shtëpie ruhen mirë: fasulet, supat, jahnitë, qoftet, byrekët. Te “Sa shpesh gatuani?” zgjidhni sa
+        herë doni të gatuani. Me “Një herë në ditë”, gjellët që ruhen gatuhen dyfish dhe porcioni i dytë hahet të
+        nesërmen. Me “Çdo 2–3 ditë”, gatimet bëhen për 2–3 ditë, dhe gjellët që ngrihen mirë lënë edhe një porcion në
+        ngrirje për javën tjetër. Plani ju kujton një ditë përpara ta nxirrni nga ngrirja.
+      </p>
+      <p>
+        Për çdo gjellë dihet sa ditë ruhet në frigorifer dhe nëse mund të ngrihet. Gjellët me oriz hahen brenda 24
+        orësh; sallatat dhe peshku hahen të freskëta. Lista e blerjeve e numëron sasinë në ditën kur gatuhet.
+      </p>
       <h2>Çmimet e vlerësuara</h2>
       <p>
         Pasqyra e Çmimeve është ende në fazë pilot dhe ndjek vetëm disa kategori (miell, oriz, makarona, vaj, sheqer,
@@ -60,6 +71,17 @@ const CONTENT = {
       <p>
         When a product goes on promotion or its price changes, the plan can change too: for example more chicken when
         chicken is on offer.
+      </p>
+      <h2>Cooking ahead</h2>
+      <p>
+        Many home dishes keep well: bean stew, soups, potato stew, meatballs, byrek. Under “How often do you cook?”
+        choose how often you want to cook. With “Once a day”, dishes that keep are cooked in a double batch and the
+        second portion is eaten the next day. With “Every 2–3 days”, batches cover 2–3 days, and dishes that freeze well
+        also leave a portion in the freezer for the following week. The plan reminds you the day before to take it out.
+      </p>
+      <p>
+        Each dish records how many days it keeps in the fridge and whether it freezes. Dishes with rice are eaten within
+        24 hours; salads and fish are eaten fresh. The shopping list counts a batch on the day it is cooked.
       </p>
       <h2>Estimated prices</h2>
       <p>

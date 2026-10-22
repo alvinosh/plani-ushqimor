@@ -52,10 +52,31 @@ export function nutritionOf(recipe, scale = 1) {
   return out
 }
 
+// Cooking ahead. Dishes that keep (recipe.keeps / recipe.freezes) can be cooked
+// in a bigger batch and eaten again on later days. Per cooking setting:
+//   fridge   extra portions that go in the fridge
+//   within   days ahead those portions are eaten (capped by the dish's `keeps`)
+//   freezer  extra portions that go in the freezer, eaten FREEZER_DAYS later
+//   perDay   most cooked-ahead meals on any one day
+export const COOKING = {
+  fresh: { fridge: 0, within: 0, freezer: 0, perDay: 0 },
+  daily: { fridge: 1, within: 1, freezer: 0, perDay: 1 },
+  batch: { fridge: 2, within: 3, freezer: 1, perDay: 2 },
+}
+const FREEZER_DAYS = [6, 10]
+// Score bonus per portion cooked ahead, so dishes that keep win close calls.
+const AHEAD_BONUS = 35
+
 // Builds a plan for every day of the given month for one person.
-// Returns { days: [{ date, scale, meals: [{ slot, recipe }], totals, cost }], avg }
-export function buildPlan({ profile, prices, year, month, variant = 0 }) {
+// Returns { days: [{ date, scale, meals, totals, cost, thaw }], avg } where each
+// meal is { slot, recipe, servings, leftover, ahead }:
+//   servings  portions to cook that day, in day-scaled units (0 for leftovers)
+//   leftover  { date, frozen } when the meal was cooked on an earlier day
+//   ahead     [{ date, slot, frozen }] later meals cooked in the same batch
+// and `thaw` lists the frozen meals to take out of the freezer for the next day.
+export function buildPlan({ profile, prices, year, month, variant = 0, cooking = 'daily' }) {
   const rng = mulberry32(hash(`${profile.id}|${year}-${month}|${variant}`))
+  const mode = COOKING[cooking] ?? COOKING.daily
   const exclude = new Set(profile.exclude ?? [])
   const pool = RECIPES.filter((r) => !r.tags.some((t) => exclude.has(t)))
   const stats = new Map(pool.map((r) => [r.id, recipeStats(r, prices)]))
@@ -70,20 +91,62 @@ export function buildPlan({ profile, prices, year, month, variant = 0 }) {
     }),
   )
   const slotPools = profile.slots.map((s) => pool.filter((r) => s.from.includes(r.type)))
+  // Later slots first, so dinner leftovers become the next day's lunch.
+  const aheadOrder = profile.slots.map((_, i) => i).reverse()
 
   const lastUsed = new Map()
   const timesUsed = new Map()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const w = profile.weights
   const days = []
+  // reserved[t] maps slot index -> { recipe, from, frozen } for meals cooked
+  // before day t; reservedDays maps recipe id -> the days it is reserved for.
+  const reserved = Array.from({ length: daysInMonth }, () => new Map())
+  const reservedDays = new Map()
+
+  // Where the extra portions of recipe r, cooked in slot `from` on day d, would
+  // be eaten. `claimed` holds other placements made for the same day.
+  const placeAhead = (d, from, r, claimed) => {
+    const placed = []
+    if (!(r.keeps || r.freezes)) return placed
+    const others = () => claimed.concat(placed)
+    const place = (t, frozen) => {
+      if (t >= daysInMonth) return false
+      const mine = others().filter((p) => p.day === t)
+      if (reserved[t].size + mine.length >= mode.perDay) return false
+      if ([...reserved[t].values(), ...mine].some((m) => m.recipe === r)) return false
+      const slot = profile.slots.findIndex(
+        (s, i) => s.from.includes(r.type) && !reserved[t].has(i) && !mine.some((p) => p.slot === i),
+      )
+      if (slot < 0) return false
+      placed.push({ day: t, slot, from, recipe: r, frozen })
+      return true
+    }
+    const within = Math.min(r.keeps ?? 0, mode.within)
+    for (let t = d + 1; t <= d + within && placed.length < mode.fridge; t++) place(t, false)
+    if (r.freezes && mode.freezer) {
+      for (let t = d + FREEZER_DAYS[0]; t <= d + FREEZER_DAYS[1]; t++) if (place(t, true)) break
+    }
+    return placed
+  }
+
+  const planAhead = (d, choice, fixed) => {
+    const placed = []
+    if (!mode.perDay) return placed
+    for (const i of aheadOrder) if (!fixed.has(i)) placed.push(...placeAhead(d, i, choice[i], placed))
+    return placed
+  }
 
   for (let d = 0; d < daysInMonth; d++) {
     const jitter = new Map(pool.map((r) => [r.id, rng() * 30]))
+    const fixed = reserved[d]
 
     const repeatPenalty = (r) => {
       const [window, inWindow, perUse] = REPEAT[r.type]
       const last = lastUsed.get(r.id)
-      return (last != null && d - last <= window ? inWindow : 0) + perUse * (timesUsed.get(r.id) ?? 0)
+      // A portion already waiting in the fridge or freezer counts as eaten.
+      const near = (last != null && d - last <= window) || reservedDays.get(r.id)?.some((t) => t > d && t - d <= window)
+      return (near ? inWindow : 0) + perUse * (timesUsed.get(r.id) ?? 0)
     }
 
     const evaluate = (choice) => {
@@ -111,23 +174,28 @@ export function buildPlan({ profile, prices, year, month, variant = 0 }) {
         FAT_PENALTY * Math.max(0, scale * (t.f - (MAX_FAT_SHARE * t.kcal) / 9)) +
         // Days that can only reach the energy target by scaling past the limits.
         Math.abs(scale * t.kcal - profile.kcal) * 0.5 +
-        extra
+        extra -
+        AHEAD_BONUS * planAhead(d, choice, fixed).length
       return { score, scale }
     }
 
     // Start from the cheapest-looking option per slot, then improve one slot at a
-    // time until nothing changes (coordinate descent).
-    let choice = slotPools.map((options, i) =>
-      [...options].sort(
-        (a, b) =>
-          stats.get(a.id).cost / stats.get(a.id).kcal - stats.get(b.id).cost / stats.get(b.id).kcal ||
-          a.id.localeCompare(b.id),
-      )[i % options.length],
+    // time until nothing changes (coordinate descent). Slots filled by a meal
+    // cooked on an earlier day stay as they are.
+    let choice = slotPools.map(
+      (options, i) =>
+        fixed.get(i)?.recipe ??
+        [...options].sort(
+          (a, b) =>
+            stats.get(a.id).cost / stats.get(a.id).kcal - stats.get(b.id).cost / stats.get(b.id).kcal ||
+            a.id.localeCompare(b.id),
+        )[i % options.length],
     )
     let best = evaluate(choice)
     for (let pass = 0; pass < 4; pass++) {
       let improved = false
       for (let i = 0; i < choice.length; i++) {
+        if (fixed.has(i)) continue
         for (const r of slotPools[i]) {
           if (r === choice[i]) continue
           const trial = choice.slice()
@@ -147,6 +215,11 @@ export function buildPlan({ profile, prices, year, month, variant = 0 }) {
       lastUsed.set(r.id, d)
       timesUsed.set(r.id, (timesUsed.get(r.id) ?? 0) + 1)
     }
+    const ahead = planAhead(d, choice, fixed)
+    for (const p of ahead) {
+      reserved[p.day].set(p.slot, { recipe: p.recipe, from: d, frozen: p.frozen })
+      reservedDays.set(p.recipe.id, [...(reservedDays.get(p.recipe.id) ?? []), p.day])
+    }
 
     const totals = Object.fromEntries(NUTRIENTS.map((n) => [n, 0]))
     let cost = 0
@@ -158,10 +231,29 @@ export function buildPlan({ profile, prices, year, month, variant = 0 }) {
     days.push({
       date: new Date(year, month, d + 1),
       scale: best.scale,
-      meals: choice.map((recipe, i) => ({ slot: profile.slots[i].slot, recipe })),
+      meals: choice.map((recipe, i) => {
+        const kept = fixed.get(i)
+        return {
+          slot: profile.slots[i].slot,
+          recipe,
+          leftover: kept ? { date: days[kept.from].date, frozen: kept.frozen } : null,
+          ahead: ahead
+            .filter((p) => p.from === i)
+            .map((p) => ({ day: p.day, date: new Date(year, month, p.day + 1), slot: profile.slots[p.slot].slot, frozen: p.frozen })),
+        }
+      }),
       totals,
       cost,
+      thaw: [],
     })
+  }
+
+  // Portions are cooked on the first day at each later day's scale.
+  for (const [d, day] of days.entries()) {
+    for (const meal of day.meals) {
+      meal.servings = meal.leftover ? 0 : day.scale + meal.ahead.reduce((a, p) => a + days[p.day].scale, 0)
+      if (meal.leftover?.frozen) days[d - 1].thaw.push(meal)
+    }
   }
 
   const avg = Object.fromEntries(NUTRIENTS.map((n) => [n, days.reduce((a, day) => a + day.totals[n], 0) / days.length]))
@@ -169,12 +261,13 @@ export function buildPlan({ profile, prices, year, month, variant = 0 }) {
   return { days, avg }
 }
 
-// Total edible grams per food across the given days, for `people` people.
+// Total edible grams per food bought for the given days, for `people` people.
+// Batches count on the day they are cooked.
 export function ingredientTotals(days, people = 1) {
   const grams = {}
   for (const day of days) {
-    for (const { recipe } of day.meals) {
-      for (const [code, g] of Object.entries(recipe.ing)) grams[code] = (grams[code] ?? 0) + g * day.scale * people
+    for (const { recipe, servings } of day.meals) {
+      for (const [code, g] of Object.entries(recipe.ing)) grams[code] = (grams[code] ?? 0) + g * servings * people
     }
   }
   return grams

@@ -2,9 +2,14 @@
 // one adult portion; the planner scales whole days up or down to hit each
 // profile's energy target.
 //
-// type: breakfast | main (lunch or dinner) | dinner (light, evening only) | snack
-// tags: meat, fish, kid (children usually like it), light, soft (easy to chew),
-//       sweet, fried
+// type:    breakfast | main (lunch or dinner) | dinner (light, evening only) | snack
+// tags:    meat, fish, kid (children usually like it), light, soft (easy to chew),
+//          sweet, fried
+// keeps:   days a cooked portion keeps in the fridge after the cooking day, so the
+//          planner can cook a bigger batch and serve it again. Missing: eat it
+//          fresh (salads, fish). Dishes with rice keep 1 day, following the NHS
+//          advice to eat cooked rice within 24 hours.
+// freezes: a portion can go in the freezer and be eaten a week or so later.
 
 export const RECIPES = [
   // Breakfast
@@ -65,73 +70,73 @@ export const RECIPES = [
 
   // Lunch or dinner
   {
-    id: 'fasule', type: 'main', tags: ['soft'],
+    id: 'fasule', type: 'main', tags: ['soft'], keeps: 3, freezes: true,
     ing: { FASULE: 90, QEPE: 50, KAROTA: 40, SALCE: 15, VAJ: 12, BUKE: 60 },
     name: { sq: 'Fasule me qepë dhe karota', en: 'Albanian bean stew (fasule)' },
     steps: { sq: 'Lërini fasulet në ujë një natë. Zieni me qepë, karotë dhe salcë derisa të zbuten (rreth 1.5 orë).', en: 'Soak the beans overnight. Simmer with onion, carrot and tomato paste until tender (about 1.5 hours).' },
   },
   {
-    id: 'supe-thjerreza', type: 'main', tags: ['soft'],
+    id: 'supe-thjerreza', type: 'main', tags: ['soft'], keeps: 3, freezes: true,
     ing: { THJERREZA: 80, QEPE: 40, KAROTA: 50, DOMATE: 80, VAJ: 10, BUKE: 60 },
     name: { sq: 'Supë e trashë me thjerrëza', en: 'Thick lentil soup' },
     steps: { sq: 'Kaurdisni qepën dhe karotën, shtoni thjerrëzat, domaten dhe ujë. Zieni 30 minuta.', en: 'Sauté onion and carrot, add lentils, tomato and water. Simmer for 30 minutes.' },
   },
   {
-    id: 'pule-pilaf', type: 'main', tags: ['meat', 'kid'],
+    id: 'pule-pilaf', type: 'main', tags: ['meat', 'kid'], keeps: 1,
     ing: { PULE: 200, ORIZ: 80, GJALPE: 5, VAJ: 5, DOMATE: 100, KASTRAVEC: 80 },
     name: { sq: 'Pulë e pjekur me pilaf dhe sallatë', en: 'Roast chicken with rice pilaf and salad' },
     steps: { sq: 'Piqni pulën në 200°C rreth 1 orë. Gatuani orizin në lëngun e pulës me pak gjalpë.', en: 'Roast the chicken at 200°C for about an hour. Cook the rice in the chicken stock with a little butter.' },
   },
   {
-    id: 'pule-patate', type: 'main', tags: ['meat', 'kid'],
+    id: 'pule-patate', type: 'main', tags: ['meat', 'kid'], keeps: 3,
     ing: { PULE: 200, PATATE: 250, QEPE: 30, VAJ: 15 },
     name: { sq: 'Pulë me patate në furrë', en: 'Oven-baked chicken with potatoes' },
     steps: { sq: 'Vendosni pulën dhe patatet e prera në tavë me qepë, vaj, kripë e rigon. Piqni 1 orë në 200°C.', en: 'Put chicken and sliced potatoes in a tray with onion, oil, salt and oregano. Bake 1 hour at 200°C.' },
   },
   {
-    id: 'tave-kosi', type: 'main', tags: ['meat', 'kid', 'soft'],
+    id: 'tave-kosi', type: 'main', tags: ['meat', 'kid', 'soft'], keeps: 1,
     ing: { PULE: 170, KOS: 150, VEZE: 50, MIELL: 15, GJALPE: 10, ORIZ: 30 },
     name: { sq: 'Tavë kosi me pulë', en: 'Baked chicken with yogurt (tavë kosi)' },
     steps: { sq: 'Piqni pulën me orizin. Skuqni miellin në gjalpë, përzieni me kosin dhe vezën, hidheni sipër dhe piqni 30 minuta.', en: 'Bake the chicken with the rice. Cook the flour in butter, mix with yogurt and egg, pour over and bake 30 minutes.' },
   },
   {
-    id: 'makarona-domate', type: 'main', tags: ['kid'],
+    id: 'makarona-domate', type: 'main', tags: ['kid'], keeps: 2,
     ing: { MAKARONA: 100, DOMATE: 150, QEPE: 30, VAJ: 10, DJATHE: 25 },
     name: { sq: 'Makarona me salcë domateje dhe djathë', en: 'Spaghetti with tomato sauce and cheese' },
     steps: { sq: 'Gatuani salcën me domate të grira dhe qepë 15 minuta. Përzieni me makaronat dhe djathin.', en: 'Cook grated tomatoes and onion for 15 minutes. Toss with the spaghetti and cheese.' },
   },
   {
-    id: 'makarona-mish', type: 'main', tags: ['meat', 'kid'],
+    id: 'makarona-mish', type: 'main', tags: ['meat', 'kid'], keeps: 3, freezes: true,
     ing: { MAKARONA: 100, MISH_GRIRE: 100, SALCE: 20, QEPE: 40, KAROTA: 30, VAJ: 8 },
     name: { sq: 'Makarona me mish të grirë', en: 'Spaghetti with meat sauce' },
     steps: { sq: 'Kaurdisni qepën, karotën dhe mishin. Shtoni salcën dhe pak ujë, zieni 20 minuta.', en: 'Brown onion, carrot and mince. Add tomato paste and a little water, simmer for 20 minutes.' },
   },
   {
-    id: 'qofte-patate', type: 'main', tags: ['meat', 'kid'],
+    id: 'qofte-patate', type: 'main', tags: ['meat', 'kid'], keeps: 3, freezes: true,
     ing: { MISH_GRIRE: 130, BUKE: 20, VEZE: 15, QEPE: 25, PATATE: 200, VAJ: 15, DOMATE: 100 },
     name: { sq: 'Qofte në furrë me patate dhe sallatë', en: 'Baked meatballs with potatoes and salad' },
     steps: { sq: 'Përzieni mishin me bukë të njomur, vezë, qepë dhe erëza. Formoni qofte dhe piqini me patatet 35 minuta.', en: 'Mix mince with soaked bread, egg, onion and herbs. Shape and bake with the potatoes for 35 minutes.' },
   },
   {
-    id: 'speca-mbushur', type: 'main', tags: ['meat'],
+    id: 'speca-mbushur', type: 'main', tags: ['meat'], keeps: 1, freezes: true,
     ing: { SPEC: 200, ORIZ: 50, MISH_GRIRE: 80, DOMATE: 80, QEPE: 30, VAJ: 10 },
     name: { sq: 'Speca të mbushur me oriz dhe mish', en: 'Peppers stuffed with rice and meat' },
     steps: { sq: 'Mbushni specat me mish, oriz, qepë e domate. Piqini të mbuluar 45 minuta në 190°C.', en: 'Fill the peppers with mince, rice, onion and tomato. Bake covered for 45 minutes at 190°C.' },
   },
   {
-    id: 'byrek-spinaq', type: 'main', tags: ['kid'],
+    id: 'byrek-spinaq', type: 'main', tags: ['kid'], keeps: 2, freezes: true,
     ing: { MIELL: 100, SPINAQ: 150, DJATHE: 50, VEZE: 25, VAJ: 20, KOS: 150 },
     name: { sq: 'Byrek me spinaq e djathë, me kos', en: 'Spinach and cheese byrek with yogurt' },
     steps: { sq: 'Hapni petët, shtroni spinaqin e zier me djathë e vezë, mbulojeni dhe piqeni 40 minuta në 200°C. Shërbejeni me kos.', en: 'Roll out the pastry, fill with blanched spinach, cheese and egg, cover and bake 40 minutes at 200°C. Serve with yogurt.' },
   },
   {
-    id: 'jahni-patate', type: 'main', tags: ['soft'],
+    id: 'jahni-patate', type: 'main', tags: ['soft'], keeps: 3,
     ing: { PATATE: 300, QEPE: 50, KAROTA: 50, SALCE: 15, VAJ: 15, BUKE: 60, DJATHE: 30 },
     name: { sq: 'Jahni me patate', en: 'Potato stew' },
     steps: { sq: 'Kaurdisni qepën, shtoni patatet, karotat, salcën dhe ujë sa t\'i mbulojë. Zieni 30 minuta.', en: 'Sauté the onion, add potatoes, carrots, tomato paste and water to cover. Simmer 30 minutes.' },
   },
   {
-    id: 'laker-oriz', type: 'main', tags: [],
+    id: 'laker-oriz', type: 'main', tags: [], keeps: 1,
     ing: { LAKER: 300, ORIZ: 50, SALCE: 15, QEPE: 30, VAJ: 15, KOS: 150, BUKE: 40 },
     name: { sq: 'Lakër me oriz në tavë, me kos', en: 'Braised cabbage with rice and yogurt' },
     steps: { sq: 'Kaurdisni lakrën e grirë me qepë, shtoni orizin, salcën dhe ujë. Piqeni 30 minuta. Shërbejeni me kos.', en: 'Sauté shredded cabbage with onion, add rice, tomato paste and water. Bake 30 minutes. Serve with yogurt.' },
@@ -149,62 +154,62 @@ export const RECIPES = [
     steps: { sq: 'Përzieni tonin, fasulet e ziera, vezën e zier dhe perimet e prera me vaj e uthull.', en: 'Toss tuna, cooked beans, boiled egg and chopped vegetables with oil and vinegar.' },
   },
   {
-    id: 'supe-pule', type: 'main', tags: ['meat', 'kid', 'soft', 'light'],
+    id: 'supe-pule', type: 'main', tags: ['meat', 'kid', 'soft', 'light'], keeps: 1, freezes: true,
     ing: { PULE: 120, ORIZ: 40, KAROTA: 50, QEPE: 30, PATATE: 80, VEZE: 25 },
     name: { sq: 'Supë pule me oriz dhe perime', en: 'Chicken soup with rice and vegetables' },
     steps: { sq: 'Zieni pulën me qepë e karotë 40 minuta. Shtoni patatet dhe orizin. Në fund trazoni vezën me limon.', en: 'Simmer the chicken with onion and carrot for 40 minutes. Add potatoes and rice. Finish with egg and lemon.' },
   },
   {
-    id: 'omelete-patate', type: 'main', tags: ['kid'],
+    id: 'omelete-patate', type: 'main', tags: ['kid'], keeps: 1,
     ing: { VEZE: 150, PATATE: 200, QEPE: 30, VAJ: 12, DOMATE: 100, BUKE: 40 },
     name: { sq: 'Omëletë me patate', en: 'Potato omelette' },
     steps: { sq: 'Gatuani patatet e prera hollë me qepën derisa të zbuten. Hidhni vezët e rrahura dhe gatuajeni nga të dyja anët.', en: 'Cook thinly sliced potatoes with onion until soft. Add beaten eggs and cook on both sides.' },
   },
   {
-    id: 'pilaf-perime', type: 'main', tags: ['kid'],
+    id: 'pilaf-perime', type: 'main', tags: ['kid'], keeps: 1,
     ing: { ORIZ: 90, KAROTA: 50, SPEC: 50, KUNGULL: 80, VAJ: 12, KOS: 200 },
     name: { sq: 'Pilaf me perime dhe kos', en: 'Vegetable rice pilaf with yogurt' },
     steps: { sq: 'Kaurdisni perimet e prera kubikë, shtoni orizin dhe ujë dyfish. Gatuajeni 18 minuta. Shërbejeni me kos.', en: 'Sauté diced vegetables, add rice and twice as much water. Cook 18 minutes. Serve with yogurt.' },
   },
   {
-    id: 'kunguj-tave', type: 'main', tags: [],
+    id: 'kunguj-tave', type: 'main', tags: [], keeps: 2,
     ing: { KUNGULL: 300, VEZE: 100, DJATHE: 40, MIELL: 20, VAJ: 12, BUKE: 50 },
     name: { sq: 'Kunguj në tavë me vezë dhe djathë', en: 'Baked zucchini with eggs and cheese' },
     steps: { sq: 'Grini kungujt, përzieni me vezët, djathin dhe miellin. Piqeni në tavë 35 minuta në 190°C.', en: 'Grate the zucchini, mix with eggs, cheese and flour. Bake in a dish for 35 minutes at 190°C.' },
   },
   {
-    id: 'pule-skare-sallate', type: 'main', tags: ['meat', 'light'],
+    id: 'pule-skare-sallate', type: 'main', tags: ['meat', 'light'], keeps: 2,
     ing: { PULE: 220, DOMATE: 150, KASTRAVEC: 150, VAJ: 10, BUKE_INTEGRALE: 50 },
     name: { sq: 'Pulë në skarë me sallatë', en: 'Grilled chicken with salad' },
     steps: { sq: 'Piqni copat e pulës në skarë ose tigan. Shërbejini me sallatë domate e kastravec.', en: 'Grill or pan-fry the chicken pieces. Serve with tomato and cucumber salad.' },
   },
   {
-    id: 'spinaq-oriz', type: 'main', tags: ['soft'],
+    id: 'spinaq-oriz', type: 'main', tags: ['soft'], keeps: 1,
     ing: { SPINAQ: 250, ORIZ: 60, QEPE: 30, VAJ: 10, VEZE: 50, KOS: 150 },
     name: { sq: 'Spinaq me oriz, vezë dhe kos', en: 'Spinach rice with egg and yogurt' },
     steps: { sq: 'Kaurdisni qepën, shtoni spinaqin dhe orizin me pak ujë. Gatuajeni 20 minuta. Shërbejeni me vezë të zier dhe kos.', en: 'Sauté onion, add spinach and rice with a little water. Cook 20 minutes. Serve with a boiled egg and yogurt.' },
   },
   {
-    id: 'makarona-ton', type: 'main', tags: ['fish'],
+    id: 'makarona-ton', type: 'main', tags: ['fish'], keeps: 1,
     ing: { MAKARONA: 100, TON: 80, DOMATE: 150, VAJ: 8, QEPE: 20 },
     name: { sq: 'Makarona me ton dhe domate', en: 'Spaghetti with tuna and tomatoes' },
     steps: { sq: 'Gatuani domatet me qepë 10 minuta, shtoni tonin. Përzieni me makaronat.', en: 'Cook the tomatoes with onion for 10 minutes, add the tuna. Toss with the spaghetti.' },
   },
   {
-    id: 'laker-mish', type: 'main', tags: ['meat'],
+    id: 'laker-mish', type: 'main', tags: ['meat'], keeps: 1, freezes: true,
     ing: { LAKER: 250, MISH_GRIRE: 80, ORIZ: 40, SALCE: 15, VAJ: 10, BUKE: 40 },
     name: { sq: 'Lakër me mish', en: 'Cabbage with minced meat' },
     steps: { sq: 'Kaurdisni mishin, shtoni lakrën e grirë, orizin, salcën dhe ujë. Zieni 35 minuta.', en: 'Brown the mince, add shredded cabbage, rice, tomato paste and water. Simmer 35 minutes.' },
   },
 
   {
-    id: 'pule-zier-perime', type: 'main', tags: ['meat', 'kid', 'soft', 'light'],
+    id: 'pule-zier-perime', type: 'main', tags: ['meat', 'kid', 'soft', 'light'], keeps: 3,
     ing: { PULE: 180, PATATE: 150, KAROTA: 80, KUNGULL: 100, QEPE: 30, VAJ: 5 },
     name: { sq: 'Pulë e zier me perime', en: 'Poached chicken with vegetables' },
     steps: { sq: 'Zieni pulën me qepë 30 minuta, shtoni patatet, karotat dhe kungujt dhe zieni edhe 20 minuta.', en: 'Simmer the chicken with onion for 30 minutes, add potatoes, carrots and zucchini and cook 20 minutes more.' },
   },
   {
-    id: 'thjerreza-oriz', type: 'main', tags: ['soft'],
+    id: 'thjerreza-oriz', type: 'main', tags: ['soft'], keeps: 1,
     ing: { THJERREZA: 70, ORIZ: 50, QEPE: 60, VAJ: 10, KOS: 150 },
     name: { sq: 'Thjerrëza me oriz dhe qepë të kaurdisur, me kos', en: 'Lentils and rice with caramelised onion and yogurt' },
     steps: { sq: 'Zieni thjerrëzat 15 minuta, shtoni orizin dhe gatuajeni edhe 18 minuta. Sipër hidhni qepën e kaurdisur. Shërbejeni me kos.', en: 'Boil the lentils 15 minutes, add the rice and cook 18 minutes more. Top with fried onion. Serve with yogurt.' },
@@ -216,7 +221,7 @@ export const RECIPES = [
     steps: { sq: 'Shtroni perimet e prera në tavë, vendosni peshkun sipër me limon e hudhër. Piqeni 25 minuta në 200°C.', en: 'Lay the sliced vegetables in a tray, put the fish on top with lemon and garlic. Bake 25 minutes at 200°C.' },
   },
   {
-    id: 'sallate-fasule', type: 'main', tags: ['light'],
+    id: 'sallate-fasule', type: 'main', tags: ['light'], keeps: 1,
     ing: { FASULE: 70, DOMATE: 150, KASTRAVEC: 80, QEPE: 30, DJATHE: 30, VAJ: 8, BUKE_INTEGRALE: 40 },
     name: { sq: 'Sallatë me fasule, domate dhe djathë', en: 'Bean salad with tomato and cheese' },
     steps: { sq: 'Përzieni fasulet e ziera me perimet e prera, djathin, vajin dhe uthullën.', en: 'Toss cooked beans with chopped vegetables, cheese, oil and vinegar.' },
@@ -224,7 +229,7 @@ export const RECIPES = [
 
   // Light evening meals
   {
-    id: 'supe-perime', type: 'dinner', tags: ['light', 'soft', 'kid'],
+    id: 'supe-perime', type: 'dinner', tags: ['light', 'soft', 'kid'], keeps: 3, freezes: true,
     ing: { PATATE: 100, KAROTA: 80, KUNGULL: 100, QEPE: 40, VAJ: 10, BUKE: 50, DJATHE: 30 },
     name: { sq: 'Supë perimesh me bukë dhe djathë', en: 'Vegetable soup with bread and cheese' },
     steps: { sq: 'Zieni perimet e prera 25 minuta. Shtypini pjesërisht. Shërbejeni me bukë dhe djathë.', en: 'Simmer the chopped vegetables for 25 minutes. Partly mash. Serve with bread and cheese.' },

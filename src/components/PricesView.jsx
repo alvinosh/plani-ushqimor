@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ChevronDown, ChevronUp, Info } from 'lucide-react'
 import { FOODS } from '../data/foods.js'
 import { bestOffer, localDeals, promotions } from '../lib/pricing.js'
 import Filters from './Filters.jsx'
@@ -12,23 +13,27 @@ function Promotions({ data, filters, i18n, today }) {
   return (
     <section>
       <h2>{t('promosTitle')}</h2>
-      <p className="muted">{t('promosIntro')}</p>
-      {!rows.length && <p className="notice">{t('noPromos')}</p>}
+      <p>{t('promosIntro')}</p>
+      {!rows.length && (
+        <p className="notice">
+          <Info aria-hidden="true" /> {t('noPromos')}
+        </p>
+      )}
       <div className="promo-grid">
         {rows.map(({ item, offer, state, saving }) => (
           <article key={`${item.id}-${offer.merchant}`} className="promo">
             <div className="promo-top">
-              <span className={`badge ${state === 'active' ? 'good' : 'accent'}`}>
+              <span className={`badge ${state === 'active' ? 'badge-good' : 'badge-accent'}`}>
                 {state === 'active' ? t('running') : t('startsOn', { d: date(offer.promo.from) })}
               </span>
-              <span className="promo-saving">−{num(saving * 100)}%</span>
+              <span className="saving">−{num(saving * 100)}%</span>
             </div>
-            <h3 className="product-name">{item.name}</h3>
+            <h3>{item.name}</h3>
             <p className="promo-price">
               <strong>{money(offer.promo.price * offer.size)}</strong>{' '}
               <s className="muted">{money(offer.price * offer.size)}</s>
             </p>
-            <p className="muted small">
+            <p className="small">
               {offer.merchant} · {num(offer.promo.price, 2)} {t('perUnit', { u: unit(item.unit) })} ·{' '}
               {t('until', { d: date(offer.promo.to) })}
             </p>
@@ -64,7 +69,7 @@ function Categories({ data, history, filters, i18n, today }) {
     <section>
       <h2>{t('categoriesTitle')}</h2>
       <div className="table-wrap">
-        <table className="table">
+        <table className="table stack">
           <thead>
             <tr>
               <th>{t('colCategory')}</th>
@@ -80,23 +85,21 @@ function Categories({ data, history, filters, i18n, today }) {
               const points = history.days.filter((d) => d.min[cat.code] != null).map((d) => ({ date: d.date, value: d.min[cat.code] }))
               return (
                 <tr key={cat.code}>
-                  <td className="nowrap">
-                    <span aria-hidden="true">{cat.icon}</span> {cat.name}
-                  </td>
-                  <td>
+                  <td className="col-main food-name nowrap">{cat.name}</td>
+                  <td className="col-wide">
                     <strong className="nowrap">
                       {num(best.price, 2)} {t('perUnit', { u })}
                     </strong>
-                    {best.promo && <span className="badge good">{t('promo')}</span>}
+                    {best.promo && <span className="badge badge-good">{t('promo')}</span>}
                     <span className="product-meta">
                       {best.item.name} · {best.offer.merchant}
                     </span>
                   </td>
-                  <td className="num nowrap">
+                  <td className="col-hide num nowrap">
                     {num(median, 2)} {t('perUnit', { u })}
                   </td>
-                  <td className="num">{prices.length}</td>
-                  <td>
+                  <td className="col-hide num">{prices.length}</td>
+                  <td className="col-side">
                     <Sparkline points={points} unit={t('perUnit', { u })} i18n={i18n} />
                   </td>
                 </tr>
@@ -105,7 +108,7 @@ function Categories({ data, history, filters, i18n, today }) {
           </tbody>
         </table>
       </div>
-      {history.days.length < 2 && <p className="muted small">{t('trendEmpty')}</p>}
+      {history.days.length < 2 && <p className="table-note">{t('trendEmpty')}</p>}
     </section>
   )
 }
@@ -119,7 +122,7 @@ function LocalDeals({ data, filters, i18n }) {
   return (
     <section>
       <h2>{t('localTitle')}</h2>
-      <p className="muted">{t('localIntro')}</p>
+      <p>{t('localIntro')}</p>
       <div className="table-wrap">
         <table className="table">
           <tbody>
@@ -147,7 +150,8 @@ function LocalDeals({ data, filters, i18n }) {
         </table>
       </div>
       {rows.length > LOCAL_PREVIEW && (
-        <button type="button" className="button" onClick={() => setAll((v) => !v)}>
+        <button type="button" className="btn btn-outline show-more" onClick={() => setAll((v) => !v)}>
+          {all ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
           {all ? t('showLess') : t('showAll', { n: rows.length })}
         </button>
       )}
@@ -162,11 +166,11 @@ function Estimated({ prices, i18n }) {
   return (
     <section>
       <h2>{t('estTitle')}</h2>
-      <p className="muted">{t('estIntro')}</p>
+      <p>{t('estIntro')}</p>
       <ul className="est-list">
         {rows.map((p) => (
           <li key={p.code}>
-            <span aria-hidden="true">{FOODS[p.code].icon}</span> {pick(FOODS[p.code].name)}
+            {pick(FOODS[p.code].name)}
             <span className="muted">
               {num(p.unitPrice)} {t('perKgEst')}
             </span>
@@ -181,7 +185,10 @@ export default function PricesView({ data, history, prices, settings, update, i1
   const filters = useMemo(() => ({ city: settings.city, merchants: settings.merchants }), [settings.city, settings.merchants])
   return (
     <div className="prices-page">
-      <h1>{i18n.t('pricesTitle')}</h1>
+      <header className="page-head">
+        <h1 className="display">{i18n.t('pricesTitle')}</h1>
+        <p className="lede">{i18n.t('pricesIntro')}</p>
+      </header>
       <Filters data={data} settings={settings} update={update} i18n={i18n} showStrategy={false} />
       <Promotions data={data} filters={filters} i18n={i18n} today={today} />
       <Categories data={data} history={history} filters={filters} i18n={i18n} today={today} />
